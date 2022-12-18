@@ -21,28 +21,41 @@ func (r *BinmanRelease) AddGetGHTagAction(ghClient *github.Client) Action {
 
 func (action *GetGHTagAction) execute() error {
 
-	var err error
-
 	ctx := context.Background()
 
 	log.Debugf("Querying github api for tag list for %s", action.r.Repo)
-	t, _, err := action.ghClient.Repositories.ListTags(ctx, action.r.org, action.r.project, nil)
-	if err != nil {
-		return err
+
+	opt := &github.ListOptions{
+		PerPage: 10,
 	}
 
+	// get all pages of results
+	var alltags []*github.RepositoryTag
+	for {
+
+		tag, resp, err := action.ghClient.Repositories.ListTags(ctx, action.r.org, action.r.project, opt)
+		if err != nil {
+			return err
+		}
+
+		alltags = append(alltags, tag...)
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
+	}
 	/*
-	//https://github.com/google/go-github#pagination
-	we need to paginate 
-	and we need the ability to set a tagRegex via config
+		//https://github.com/google/go-github#pagination
+		we need to paginate
+		and we need the ability to set a tagRegex via config
 	*/
 	// Debug list all tags
 
-	for index, tag := range t {
+	for index, tag := range alltags {
 		log.Debugf("tags[%d] == %s", index, tag.GetName())
 	}
 
-	version := t[0].GetName()
+	version := alltags[0].GetName()
 
 	// Create a release and add our tag
 	// TODO Refactor to avoid this requirement, since this is a bit confusing

@@ -23,7 +23,14 @@ func (r *BinmanRelease) setPreActions(ghClient *github.Client, releasePath strin
 	var actions []Action
 
 	// Add query task
-	actions = append(actions, r.AddGetGHReleaseAction(ghClient))
+	switch r.QueryType {
+	case "tag":
+		actions = append(actions, r.AddGetGHTagAction(ghClient))
+	case "release":
+		actions = append(actions, r.AddGetGHLatestReleaseAction(ghClient))
+	case "releasebytag":
+		actions = append(actions, r.AddGetGHReleaseByTagsAction(ghClient))
+	}
 
 	// If publishPath is already set we are doing a direct repo download and don't need to set a release path
 	// Direct repo actions should be moved to their own command

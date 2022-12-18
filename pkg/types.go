@@ -92,6 +92,23 @@ func (config *GHBMConfig) populateReleases() {
 			// set project/org variables
 			config.Releases[index].getOR()
 
+			// Configure the query type
+			// release is the default, if a version is set relasebytag
+			// for repos without releases we offer getting via tag
+			switch config.Releases[index].QueryType {
+			case "tag":
+				// tag style queries only support postOnly operations
+				config.Releases[index].PostOnly = true
+			case "release":
+				fallthrough
+			default:
+				config.Releases[index].QueryType = "release"
+
+				if config.Releases[index].Version != "" {
+					config.Releases[index].QueryType = "releasebytag"
+				}
+			}
+
 			// If the user has not supplied an external url check against our map of known external urls
 			if config.Releases[index].ExternalUrl == "" {
 				config.Releases[index].knownUrlCheck()

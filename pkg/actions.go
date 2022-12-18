@@ -38,7 +38,12 @@ func (r *BinmanRelease) setPreActions(ghClient *github.Client, releasePath strin
 		actions = append(actions, r.AddReleaseStatusAction(releasePath))
 	}
 
-	// Add remaining preDownload actions
+	// If we are querying tags there are no assets to select
+	if r.QueryType == "tag" {
+		return actions
+	}
+
+	// Add remaining common preDownload actions
 	actions = append(actions,
 		r.AddSetUrlAction(),
 		r.AddSetArtifactPathAction(releasePath),

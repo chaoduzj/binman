@@ -2,6 +2,7 @@ package binman
 
 import (
 	"context"
+	"regexp"
 
 	"github.com/google/go-github/v48/github"
 	log "github.com/rjbrown57/binman/pkg/logging"
@@ -26,10 +27,12 @@ func (action *GetGHTagAction) execute() error {
 	log.Debugf("Querying github api for tag list for %s", action.r.Repo)
 
 	opt := &github.ListOptions{
-		PerPage: 10,
+		PerPage: 50,
 	}
 
 	// get all pages of results
+
+	// This should be moved to it's own function when proven
 	var alltags []*github.RepositoryTag
 	for {
 
@@ -44,18 +47,24 @@ func (action *GetGHTagAction) execute() error {
 		}
 		opt.Page = resp.NextPage
 	}
-	/*
-		//https://github.com/google/go-github#pagination
-		we need to paginate
-		and we need the ability to set a tagRegex via config
-	*/
-	// Debug list all tags
 
-	for index, tag := range alltags {
-		log.Debugf("tags[%d] == %s", index, tag.GetName())
+	if action.r.TagRegex != "" {
+		var filteredtags []*github.RepositoryTag
+
+		log.Debugf("tagregex defined as %s", action.r.TagRegex)
+		tr := regexp.MustCompile(action.r.TagRegex)
+
+		for _, tag := range alltags {
+			if tr.MatchString(tag.GetName()) {
+				filteredtags = append(filteredtags, tag)
+			}
+		}
+		alltags = filteredtags
 	}
 
+	// If the tags are semvers 0 will be the lexical latest
 	version := alltags[0].GetName()
+	log.Debugf("Selected tag %s", alltags[0].GetName())
 
 	// Create a release and add our tag
 	// TODO Refactor to avoid this requirement, since this is a bit confusing

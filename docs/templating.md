@@ -1,6 +1,6 @@
 # String Templating
 
-Binman supports templating via go templates and [sprig](https://masterminds.github.io/sprig/).
+Binman supports templating via go templates and [sprout](https://github.com/go-sprout/sprot/sprout/).
 
 Templating is available on the following fields
 
